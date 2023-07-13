@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Document</title>
+</head>
+<body>
+    <section class="form">
+    <h2>Formulario de control de clientes</h1>
+    <form  method="post">
+        <label for="name">Nombre:</label>
+        <input
+        type="text"
+        id="name"
+        placeholder="Nombre"
+        />
+        <label for="lastname">Apellido:</label>
+        <input
+        type="text"
+        id="lastname"
+        placeholder="Apellido"
+        />
+        <label for="email">Email:</label>
+        <input
+        type="email"
+        id="email"
+        placeholder="Correo electrónico"
+        />
+        <label for="online">En linea?</label>
+        <select
+        id="online"
+        name="online"
+        >
+        <option value="false">no</option>
+        <option value="true">si</option>
+        </select>
+        <button type="submit">Guardar cliente</button>
+    </form>
+    </section>
+    <section id="tabla-clientes">
+        <div id="client-list">
+            <h2>Lista de Clientes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Email</th>
+                        <th>Online</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+            
+        </div>
+    </section>
+</body>
+</html>
+
+<script>
+    //creamos la fila de clientes 
+    const tableBody = document.querySelector('#client-list tbody')
+
+    function createClientRow(client){
+        const row = document.createElement('tr');
+        row.innerHTML = `
+        <td>${client.id}</td>
+        <td contenteditable>${client.name}</td>
+        <td contenteditable>${client.lastname}</td>
+        <td contenteditable>${client.email}</td>
+        <td contenteditable>${client.online}</td>
+        <td>
+            <button class='save-btn'>Guardar</button>
+            <button class='delete-btn'>Borrar</button>
+        </td>
+        `
+        const saveButton = row.querySelector('.save-btn')
+        saveButton.addEventListener('click', () => {
+            updateClient(row, client.id)
+        })
+
+        const deleteButton = row.querySelector('.delete-btn');
+        deleteButton.addEventListener('click', () => {
+        deleteClient(client.id);
+        });
+
+        return row;
+    }
+
+    function updateClient(row, clientId){
+        const name = row.cells[1].textContent;
+        const lastname = row.cells[2].textContent;
+        const email = row.cells[3].textContent;
+        const online = row.cells[4].textContent;
+
+        const updatedClient = {
+            name,
+            lastname,
+            email,
+            online
+        }
+
+        fetch(`http://localhost:3000/clients/${clientId}`, {
+            method:'PUT',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedClient)
+        })
+        .then(response => response.json())
+        .then(result => {console.log("cliente actualizado", result)
+        // window.location.reload()
+        })
+        .catch((error)=> console.log(error))
+    }
+
+    function deleteClient(clientId) {
+        fetch(`http://localhost:3000/clients/${clientId}`, {
+        method: 'DELETE',
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Cliente eliminado');
+            window.location.reload(); // Recargar la página para mostrar la lista actualizada
+        } else {
+            console.error('Error al eliminar el cliente');
+        }
+    })
+    .catch(error => console.error(error));
+}
+
+    fetch('http://localhost:3000/clients')
+    .then(res=> res.json())
+    .then(clients => {
+        clients.forEach(client => {
+            const row = createClientRow(client)
+            tableBody.appendChild(row);
+        });
+    })
+    .catch(()=>{
+        alert('Error al cargar los clientes');
+    })
+
+    const form = document.querySelector('form')
+    form.addEventListener('submit', handleSubmit)
+
+    function handleSubmit(e){
+        e.preventDefault()
+        
+        const name = document.querySelector('#name').value;
+        const lastname = document.querySelector('#lastname').value;
+        const email = document.querySelector('#email').value;
+        const online = document.querySelector('#online').value;
+
+        const data = {
+            name,
+            lastname,
+            email,
+            online
+        }
+        console.log(data);
+
+        fetch('http://localhost:3000/clients', {
+            method:'POST', 
+            headers:{
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+        })
+        .then((response)=>{return response.json()})
+        .then((result)=>{console.log("Cliente guardado", result)
+        window.location.reload();
+        })
+        .catch(error => console.error(error))
+    }
+</script>
